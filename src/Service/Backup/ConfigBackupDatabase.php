@@ -248,6 +248,7 @@ final readonly class ConfigBackupDatabase
 
         return [
             'isEnabled'             => $settings->isEnabled,
+            'backend'               => $settings->backend,
             'baseUrl'               => $settings->baseUrl,
             'apiToken'              => $settings->apiToken,
             'chatModel'             => $settings->chatModel,
@@ -295,6 +296,10 @@ final readonly class ConfigBackupDatabase
         $settings = $this->aiSettings->current() ?? new AiSettings();
 
         $settings->isEnabled             = true === ($values['isEnabled'] ?? false);
+        // A backup from before the choice existed was always Ollama.
+        $settings->backend               = AiSettings::BACKEND_OPENAI === ($values['backend'] ?? null)
+            ? AiSettings::BACKEND_OPENAI
+            : AiSettings::BACKEND_OLLAMA;
         $settings->baseUrl               = $this->string($values, 'baseUrl');
         $settings->apiToken              = $this->string($values, 'apiToken');
         $settings->chatModel             = $this->string($values, 'chatModel');

@@ -12,6 +12,7 @@ use App\Service\Ai\AiAssistant;
 use App\Service\Ai\AiCallRecorder;
 use App\Service\Ai\AiPermissions;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiCompatibleClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -237,6 +238,7 @@ final class AiPermissionsTest extends KernelTestCase
             new OllamaClient(new MockHttpClient([]), new NullLogger()),
             new AiCallRecorder($this->createStub(Connection::class), new NullLogger()),
             new NullLogger(),
+            new OpenAiCompatibleClient(new MockHttpClient([]), new NullLogger()),
         );
     }
 }

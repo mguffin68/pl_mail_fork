@@ -136,7 +136,13 @@ poll would empty a field mid-word.
                     <div role="alert" class="flex items-start gap-2.5 rounded-lg alert-danger px-3.5 py-3 text-sm text-danger">
                         <i class="fa-solid fa-plug-circle-xmark mt-0.5 shrink-0" aria-hidden="true"></i>
                         <p class="leading-snug break-words">
-                            {{ ('admin.ai.probe.' ~ probe.reason)|trans(probe.reasonParams) }}
+                            {# The probe keys its params bare ('status'); the
+                               translator replaces keys verbatim, so wrap them. #}
+                            {% set params = {} %}
+                            {% for key, value in probe.reasonParams %}
+                                {% set params = params|merge({ ('%' ~ key ~ '%'): value }) %}
+                            {% endfor %}
+                            {{ ('admin.ai.probe.' ~ probe.reason)|trans(params) }}
                         </p>
                     </div>
                 {% endif %}
@@ -157,6 +163,7 @@ poll would empty a field mid-word.
                         {{ form_errors(form) }}
 
                         {{ form_row(form.isEnabled) }}
+                        {{ form_row(form.backend) }}
                         {{ form_row(form.baseUrl) }}
                         {{ form_row(form.apiToken) }}
 

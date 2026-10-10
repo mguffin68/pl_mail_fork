@@ -14,6 +14,7 @@ use App\Entity\User\User;
 use App\Service\Ai\AiAssistant;
 use App\Service\Ai\AiPermissions;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiCompatibleClient;
 use App\Service\Ai\PromptLibrary;
 use App\Service\Ai\WritingAssistant;
 use Doctrine\DBAL\Connection;
@@ -412,6 +413,7 @@ final class WritingAssistantTest extends KernelTestCase
             new OllamaClient($http, new NullLogger()),
             $this->recorder(),
             new NullLogger(),
+            new OpenAiCompatibleClient($http, new NullLogger()),
         );
 
         return new WritingAssistant($ai, new AiPermissions($ai), new PromptLibrary($this->settings));

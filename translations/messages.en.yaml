@@ -144,16 +144,16 @@ admin:
             qwen3-embedding_0_6b: 'The default, and the one to pick unless you have a reason. Multilingual, which matters more than any benchmark for a mailbox that is not all in one language, and the only one here that reached perfect precision in testing. 639 MB.'
         field:
             base_url: 'Model host'
-            base_url_help: 'The address of an Ollama container on your network, including the port.'
+            base_url_help: 'The address of your model server on your network, including the port — an Ollama container, or anything that serves an OpenAI-compatible /v1.'
             categorisation: 'Sort mail into tabs'
             categorisation_help: 'Runs on every message that arrives. Only ever a tie-breaker — the ordinary rules decide first.'
             chat_keep_alive: 'Keep the writing model loaded for'
             chat_keep_alive_help: '5m, 30m, 4h, or a plain number of seconds. -1 keeps it loaded for good, 0 unloads it after every request. Longer means the first reply comes back sooner; the host keeps the memory reserved for the whole time either way. Leave empty to use whatever the host itself is set to.'
             chat_model: 'Writing model'
             chat_model_help: 'Used for replies, summaries and sorting. Something instruction-tuned.'
-            embedding_keep_alive: 'Keep the search model loaded for'
+            embedding_keep_alive: 'Keep the embedding model loaded for'
             embedding_keep_alive_help: 'Same format as above. This model is small and asked for constantly, so -1 — loaded for good — usually costs little and saves a wait on every search; it is worth setting if the host has the memory to spare. Leave empty to use whatever the host itself is set to.'
-            embedding_model: 'Search model'
+            embedding_model: 'Embedding model'
             embedding_model_help: 'Turns mail into vectors so search can find meaning rather than words.'
             hold: 'Wait for the assistant before showing new mail in a tab'
             hold_help: 'For people who let the assistant sort their mail. New mail is kept out of the inbox tabs for the moment the assistant needs, so it appears once, in the right tab, instead of appearing in one and moving to another. Mail brought in by a first import is never held.'
@@ -165,6 +165,10 @@ admin:
             semantic_min_similarity_help: 'How close a match has to be, from 0 to 1. Every model answers on its own scale, so this belongs with the model above: too high finds nothing, too low returns the whole mailbox.'
             enabled: 'Use a language model'
             enabled_help: 'Off by default. Everything below is ignored while this is off.'
+            backend: 'AI backend'
+            backend_help: 'Ollama speaks its own API. Choose OpenAI-compatible for LM Studio, llama.cpp, vLLM, LocalAI or anything else that serves /v1 — the model host below may end in /v1 or not.'
+            backend_ollama: 'Ollama (native API)'
+            backend_openai: 'OpenAI-compatible API'
             search: 'Search by meaning'
             search_help: 'Adds results that match what you meant. The ordinary search is unchanged.'
             summary: 'Thread summaries'
@@ -198,7 +202,7 @@ admin:
             latest: 'Last call: %feature% on %model%'
             model:
                 chat: 'Writing model'
-                embedding: 'Search model'
+                embedding: 'Embedding model'
                 missing: 'not on this host'
                 missing_body: 'A model named here is not installed on the host. Pull it there, or name one that is — until then every request for it fails.'
                 none: 'not set'
@@ -2400,7 +2404,7 @@ onboarding:
                 For Gmail and Outlook, use the sign-in buttons under Settings → Mail
                 accounts instead — no server addresses needed.
         admin_ai:
-            body: 'The address of an Ollama container on your network, and the names of two models it is holding — one for writing, one for search. Nothing leaves your network.'
+            body: 'The address of a model server on your network (Ollama, or anything OpenAI-compatible), and the names of two models it is holding — one for writing, one for search. Nothing leaves your network.'
             heading: 'What you need'
             skip_body: 'Press Next with everything empty. plMail is a complete mail client without any of this, and you can come back to it later in Admin → AI.'
             skip_heading: 'Not interested?'

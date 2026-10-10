@@ -30,6 +30,7 @@ use App\Service\Ai\LiveMailPriority;
 use App\Service\Ai\PromptLibrary;
 use App\Service\Mail\MessageCategorizer;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiCompatibleClient;
 use App\Service\Mail\HeldMailReleaser;
 use App\Service\Mail\PostIngestPipeline;
 use DateTimeImmutable;
@@ -376,6 +377,7 @@ final class ClassificationHoldFlowTest extends KernelTestCase
             ),
             $container->get(AiCallRecorder::class),
             new NullLogger(),
+            new OpenAiCompatibleClient(new MockHttpClient([]), new NullLogger()),
         );
 
         return new ClassifyMailHandler(

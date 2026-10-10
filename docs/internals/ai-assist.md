@@ -5,7 +5,8 @@ existing installation is in and the state most will stay in. That is not a discl
 constraint the whole design is bent around, and most of the decisions below only make sense in its
 light.
 
-The model host is an **Ollama container on the operator's own network**. Nothing is sent anywhere
+The model host is a **model server on the operator's own network** — Ollama, or anything that
+serves an OpenAI-compatible `/v1` (LM Studio, llama.cpp, vLLM, LocalAI). Nothing is sent anywhere
 else, and there is no hosted service to fall back to.
 
 > **Status.** All of it is written and passes unit tests and PHPStan; none of it has been run
