@@ -464,18 +464,25 @@ Optional, standardmäßig aus, und plMail ist auch ohne einen vollständigen Mai
 nichts eingeschaltet, bis du es einschaltest, und es verlässt nichts dein Netz: Das Modell läuft auf
 einer Maschine, die dir gehört.
 
-**Modell-Host** ist die Adresse eines [Ollama](https://ollama.com)-Containers in deinem eigenen Netz,
-mit Port — `http://10.0.0.5:11434`. Ein **Token** brauchst du nur, wenn du den Host hinter etwas
-gestellt hast, das danach fragt; Ollama selbst hat keine Authentifizierung.
+**KI-Backend** ist die Sprache, die der Host spricht. **Ollama** ist dessen eigene API.
+**OpenAI-kompatibles API** ist für alles, was die OpenAI-Endpunkte unter `/v1` anbietet — LM Studio,
+der Server von llama.cpp, vLLM, LocalAI, text-generation-webui — und auch Ollama selbst antwortet
+unter `/v1`.
+
+**Modell-Host** ist die Adresse dieser Maschine in deinem eigenen Netz, mit Port —
+`http://10.0.0.5:11434` für Ollama, `http://10.0.0.5:1234/v1` für LM Studio. Beim
+OpenAI-kompatiblen Backend darf das `/v1` fehlen; plMail ergänzt es. Ein **Token** brauchst du nur,
+wenn der Host danach fragt; beim OpenAI-kompatiblen Backend wird es als Bearer-Token geschickt, so
+wie LM Studio, vLLM und LocalAI es erwarten, wenn sie einen API-Schlüssel bekommen haben.
 
 Zwei Modelle, weil die Aufgaben verschieden sind. Das **Schreib-Modell** sollte instruction-tuned
-sein und wird zum Entwerfen und Einsortieren benutzt; das **Such-Modell** ist ein Embedding-Modell
-und meist deutlich kleiner. `llama3.1:8b` und `qwen3-embedding:0.6b` sind brauchbare Startpunkte.
+sein und wird zum Entwerfen und Einsortieren benutzt; das **Embedding-Modell** macht aus Mails Vektoren für die Suche
+und ist meist deutlich kleiner. `llama3.1:8b` und `qwen3-embedding:0.6b` sind brauchbare Startpunkte.
 Beide musst du vorher auf dem Host ziehen — plMail lädt nie ein Modell herunter.
 
-### Zum Such-Modell gehören zwei Einstellungen, und die sind nicht optional
+### Zum Embedding-Modell gehören zwei Einstellungen, und die sind nicht optional
 
-Unter dem Such-Modell stehen eine **Anweisung für die Suchanfrage** und eine **Mindest-Ähnlichkeit**,
+Unter dem Embedding-Modell stehen eine **Anweisung für die Suchanfrage** und eine **Mindest-Ähnlichkeit**,
 und die drei Felder sind in Wahrheit eine einzige Entscheidung. Zwei davon von verschiedenen Modellen
 ergeben eine Suche, die selbstbewusst falsch ist statt sichtbar kaputt — und das ist die
 unangenehmste Art zu scheitern: Die Ergebnisse sehen sortiert und vollständig aus und haben mit
@@ -509,7 +516,7 @@ verschiedene Stellen.
 Ollama wirft ein Modell ein paar Minuten nach der letzten Anfrage aus dem Speicher, und es wieder
 von der Platte zu lesen ist die ganze Wartezeit beim ersten „Hilf mir schreiben“ nach einer Pause —
 ein 20-GB-Modell braucht dafür Dutzende Sekunden, in denen der Host überhaupt nichts liefert. Mit
-**Schreib-Modell geladen lassen für** und **Such-Modell geladen lassen für** legst du fest, wie lange
+**Schreib-Modell geladen lassen für** und **Embedding-Modell geladen lassen für** legst du fest, wie lange
 plMail den Host bittet, das jeweilige Modell zu halten.
 
 Trag eine Dauer ein — `5m`, `30m`, `4h` — oder einfach eine Zahl in Sekunden. `-1` lässt das Modell
@@ -519,7 +526,7 @@ Antwort; der Host hält den Speicher dafür die ganze Zeit belegt, ob ihn jemand
 Beide starten bei `5m` — das ist Ollamas eigene Voreinstellung. plMail ändert also von sich aus
 nichts daran, wie dein Host sich verhält; die Felder sagen nur, was ohnehin schon passiert.
 
-**Für das Such-Modell lohnt sich `-1`**, und es ist nur deshalb nicht voreingestellt, weil plMail
+**Für das Embedding-Modell lohnt sich `-1`**, und es ist nur deshalb nicht voreingestellt, weil plMail
 nicht sehen kann, wie viel Speicher dein Host hat. Dieses Modell ist klein und wird ständig
 gebraucht — bei jeder Suche nach Bedeutung und bei jeder Nachricht, die indiziert wird. Es
 festzuhalten kostet meist kaum Speicher und spart jedes Mal eine Wartezeit. Wenn der Host den
@@ -534,6 +541,12 @@ in 41 s geladen“ heißt: es kam von der Platte. „Modell in 30 ms geladen“ 
 Speicher und der Klick hat nichts gebracht. Praktisch nach einem Neustart — und um herauszufinden,
 was ein kalter Ladevorgang auf deiner Hardware wirklich kostet, bevor du entscheidest, wie lange du
 das Modell hältst.
+
+**Beim OpenAI-kompatiblen Backend** bewirken die Felder zum Geladen-Halten nichts: Diese API kann
+nicht danach fragen, wie lange ein Modell im Speicher bleibt, das stellt der Host selbst ein.
+**Jetzt vorladen** funktioniert trotzdem — es bittet um eine Antwort von einem Token, und das lädt
+das Modell —, aber plMail kann nicht sehen, welche Modelle geladen sind. Die Übersicht listet dann
+keine, und der Editor rechnet immer mit einem kalten Start.
 
 ### Die vier Funktionen sind einzeln schaltbar
 
@@ -590,7 +603,7 @@ docker compose exec php php bin/console app:ai:embed-mailbox --email=du@example.
 
 Das läuft auf dem Maintenance-Worker in Häppchen und dauert bei einem großen Postfach Stunden. Du
 darfst es unterbrechen und wiederholen — was schon eingebettet ist, wird übersprungen, ein zweiter
-Lauf kostet also fast nichts. Ein Wechsel des Such-Modells macht alle gespeicherten Vektoren
+Lauf kostet also fast nichts. Ein Wechsel des Embedding-Modells macht alle gespeicherten Vektoren
 ungültig; genau so forderst du ein neues Einbetten an: Modell ändern, Durchlauf noch einmal starten.
 
 Die normale Suche bleibt davon völlig unberührt. Ist der Modell-Host aus oder der Durchlauf nie
@@ -609,7 +622,7 @@ um eine neue zu schreiben. Meistens stimmt sie noch weitgehend, und sie zu verst
 Wartezeit wegwerfen, die jemand schon bezahlt hat.
 
 Ein Wechsel des **Schreibmodells** sorgt dafür, dass keine gespeicherte Zusammenfassung mehr
-angezeigt wird — genauso, wie ein Wechsel des Such-Modells alle gespeicherten Vektoren ungültig
+angezeigt wird — genauso, wie ein Wechsel des Embedding-Modells alle gespeicherten Vektoren ungültig
 macht: Eine Zusammenfassung von einem Modell, das du nicht mehr betreibst, ist nicht deine
 Zusammenfassung. Aufräumen musst du nichts — der alte Text wird schlicht nicht mehr angeboten und
 beim nächsten Fragen ersetzt.
@@ -620,7 +633,7 @@ Mail wird **nicht** in dem Moment indexiert, in dem sie ankommt. Indexieren kost
 eine Anfrage an den Modell-Host, und ausgerechnet nach der Mail, die du gerade gelesen hast, suchst
 du am seltensten — plMail wartet deshalb auf einen von zwei Momenten:
 
-- **Direkt nach einer Suche.** Für die Suche nach Bedeutung wird das Such-Modell geladen, um deine
+- **Direkt nach einer Suche.** Für die Suche nach Bedeutung wird das Embedding-Modell geladen, um deine
   Anfrage in einen Vektor zu verwandeln, und das Indexieren benutzt genau dasselbe Modell — solange
   es also geladen und warm ist, indexiert plMail im Hintergrund still einen kleinen Schwung deiner
   neuesten noch nicht indexierten Mail. Deine Suche wartet nicht darauf, und es passiert höchstens
@@ -633,7 +646,7 @@ Bedeutung findbar. Die normale Suche findet sie sofort, wie immer, und eine Such
 um den Rest nachzuziehen.
 
 Ein Postfach, das weit hinterherhängt — die Funktion wurde letzte Woche eingeschaltet, oder du hast
-das Such-Modell gewechselt —, ist nicht der Fall für den nächtlichen Durchlauf. Der hat mit Absicht
+das Embedding-Modell gewechselt —, ist nicht der Fall für den nächtlichen Durchlauf. Der hat mit Absicht
 eine Obergrenze pro Postfach. Nimm dafür `app:ai:embed-mailbox` von oben, und schau unter
 **Administration → KI**, wie weit er gekommen ist.
 

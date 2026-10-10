@@ -8,6 +8,7 @@ use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\DTO\Ai\BackfillProgress;
 use App\Domain\DTO\Ai\LoadedModel;
 use App\Domain\Enum\Ai\MetricWindow;
+use App\Entity\Ai\AiSettings;
 use App\Repository\Ai\AiCallMetricRepository;
 use App\Repository\Ai\AiSettingsRepository;
 use DateTimeImmutable;
@@ -59,6 +60,7 @@ final readonly class AiPerformancePanel
         private OllamaClient           $client,
         private AiCallMetricRepository $metrics,
         private EmbeddingBackfill      $backfill,
+        private OpenAiCompatibleClient $openAiClient,
     ) {
     }
 
@@ -76,10 +78,14 @@ final readonly class AiPerformancePanel
         // Nothing is asked of the host while the master switch is off. Off is a
         // valid configuration, not a fault, and a panel that kept probing would
         // be reporting on a feature nobody has switched on.
-        $probe = $ready ? $this->client->probe((string) $settings->baseUrl, self::PROBE_TIMEOUT) : null;
+        $client = AiSettings::BACKEND_OPENAI === $settings->backend
+            ? $this->openAiClient->withToken($settings->apiToken)
+            : $this->client;
+
+        $probe = $ready ? $client->probe((string) $settings->baseUrl, self::PROBE_TIMEOUT) : null;
 
         $loaded = null !== $probe && true === $probe->reachable
-            ? $this->client->ps((string) $settings->baseUrl, self::PS_TIMEOUT)
+            ? $client->ps((string) $settings->baseUrl, self::PS_TIMEOUT)
             : [];
 
         $features = $this->metrics->perFeatureSince($window->since($now));

@@ -418,18 +418,24 @@ Retention is 30 days, swept nightly by `app:monitoring:prune`; `--push-days=N` c
 Optional, off by default, and plMail is a complete mail client with it off. Nothing here is switched
 on until you switch it on, and nothing leaves your network: the model runs on a machine you own.
 
-**Model host** is the address of an [Ollama](https://ollama.com) container on your own network,
-including the port — `http://10.0.0.5:11434`. **Token** is only needed if you have put that host
-behind something that asks for one; Ollama itself has no authentication.
+**AI backend** is the dialect the host speaks. **Ollama** is its native API. **OpenAI-compatible API**
+is for anything that serves the OpenAI `/v1` endpoints — LM Studio, llama.cpp's server, vLLM,
+LocalAI, text-generation-webui — and Ollama itself answers on `/v1` too.
+
+**Model host** is that machine's address on your own network, including the port —
+`http://10.0.0.5:11434` for Ollama, `http://10.0.0.5:1234/v1` for LM Studio. With the
+OpenAI-compatible backend the `/v1` may be left off; plMail adds it. **Token** is only needed if the
+host asks for one; with the OpenAI-compatible backend it is sent as a bearer token, which is what
+LM Studio, vLLM and LocalAI expect when they are given an API key.
 
 Two models, because the jobs are different. The **writing model** should be instruction-tuned and is
-used for drafting and sorting; the **search model** is an embedding model and is usually much
-smaller. `llama3.1:8b` and `qwen3-embedding:0.6b` are reasonable starting points. Both have to be
-pulled on the host first — plMail never downloads a model.
+used for drafting and sorting; the **embedding model** turns mail into vectors for search and is
+usually much smaller. `llama3.1:8b` and `qwen3-embedding:0.6b` are reasonable starting points. Both have to be
+pulled or loaded on the host first — plMail never downloads a model.
 
-### The search model comes with two settings, and they are not optional
+### The embedding model comes with two settings, and they are not optional
 
-Underneath the search model are a **query instruction** and a **minimum similarity**, and the three
+Underneath the embedding model are a **query instruction** and a **minimum similarity**, and the three
 fields are really one decision. Any two of them from different models produce a search that is
 confidently wrong rather than obviously broken, which is the worst way for this to fail: the results
 look ordered and complete and simply are not about what you asked for.
@@ -457,11 +463,11 @@ not holding the model you named", which send you to two different places.
 
 ### How long each model stays loaded
 
-Ollama drops a model out of memory a few minutes after the last request, and reading it back off
-disk is the whole of the wait on the first "Help me write" after a quiet spell — a 20 GB model takes
-tens of seconds to load, during which the host produces nothing at all. The **keep the writing model
-loaded for** and **keep the search model loaded for** fields are how long plMail asks the host to
-hold each one.
+Most AI backends drop a model out of memory a few minutes after the last request, and reading it back
+off disk is the whole of the wait on the first "Help me write" after a quiet spell — a 20 GB model
+takes tens of seconds to load, during which the host produces nothing at all. The **keep the writing
+model loaded for** and **keep the embedding model loaded for** fields are how long plMail asks the host
+to hold each one.
 
 Write a duration — `5m`, `30m`, `4h` — or a plain number of seconds. `-1` keeps the model loaded
 indefinitely, `0` unloads it as soon as each request finishes. Longer means a faster first answer,
@@ -470,7 +476,7 @@ and the host keeps that memory reserved for the whole time whether anyone uses i
 Both ship at `5m`, which is Ollama's own default — so out of the box plMail changes nothing about
 how your host behaves, and the boxes simply say what is already happening.
 
-**`-1` is worth considering for the search model**, and it does not ship that way only because plMail
+**`-1` is worth considering for the embedding model**, and it does not ship that way only because plMail
 cannot see how much memory your host has. That model is small and asked for constantly — every
 search by meaning, and every message being indexed — so pinning it usually costs a rounding error of
 memory and saves a wait every single time. If the host has the memory to spare, set it.
@@ -483,6 +489,11 @@ on the host itself applies. plMail cannot read that variable, so an empty box is
 41 s" means it came off disk; "loaded in 30 ms" means it was already resident and the click bought
 nothing. Useful after a restart, and useful for finding out what a cold load actually costs on your
 hardware before you decide how long to hold it.
+
+**With the OpenAI-compatible backend** the keep-loaded fields do nothing: that API has no way to ask
+for it, so how long a model stays in memory is the host's own setting. **Warm up now** still works —
+it asks for a one-token answer, which loads the model — but plMail cannot see which models are
+resident, so the panel lists none and the composer always allows for a cold load.
 
 ### The four features are separate switches
 
@@ -536,7 +547,7 @@ docker compose exec php php bin/console app:ai:embed-mailbox --email=you@example
 
 It runs on the maintenance worker a chunk at a time and takes hours on a large mailbox. It is safe
 to interrupt and safe to run again — it skips whatever is already embedded, so a second run costs
-almost nothing. Changing the search model invalidates every stored vector, which is how you ask for
+almost nothing. Changing the embedding model invalidates every stored vector, which is how you ask for
 a re-embed: change it, then run the pass again.
 
 Ordinary search is completely unchanged by any of this. If the model host is off, or the pass has
@@ -555,7 +566,7 @@ new one. It is usually still mostly right, and hiding it would throw away the wa
 already paid for.
 
 Changing the **writing model** stops every stored summary being shown, the same way changing the
-search model invalidates every stored vector: a summary written by a model you no longer run is not
+embedding model invalidates every stored vector: a summary written by a model you no longer run is not
 a summary of yours. Nothing has to be cleaned up — the old text is simply not offered, and is
 replaced the next time anybody asks.
 
@@ -565,7 +576,7 @@ Mail is **not** indexed the moment it arrives. Indexing costs a request to the m
 message, and mail you have just read is the mail you are least likely to go searching for — so
 plMail waits for one of two moments instead:
 
-- **Just after you search.** Searching by meaning loads the search model to turn your query into a
+- **Just after you search.** Searching by meaning loads the embedding model to turn your query into a
   vector, and indexing uses that same model — so once it is loaded and warm, plMail quietly indexes
   a small batch of your newest unindexed mail in the background. Your search does not wait for it,
   and it happens at most once every few minutes however much you search.
@@ -577,7 +588,7 @@ yet. Ordinary search finds it immediately, as it always has, and one search is u
 pull the rest in.
 
 A mailbox that is a long way behind — the feature was switched on last week, or you changed the
-search model — is not what the nightly pass is for. It has a ceiling per mailbox on purpose. Run
+embedding model — is not what the nightly pass is for. It has a ceiling per mailbox on purpose. Run
 `app:ai:embed-mailbox` above, and watch **Admin → AI** for how far it has got.
 
 ## Users

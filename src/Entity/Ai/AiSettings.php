@@ -93,6 +93,20 @@ class AiSettings
     #[ORM\Column(options: ['default' => false])]
     public bool $isEnabled = false;
 
+    public const string BACKEND_OLLAMA = 'ollama';
+    public const string BACKEND_OPENAI = 'openai';
+
+    /**
+     * Which dialect the model host speaks.
+     *
+     * 'ollama' for Ollama's native /api, 'openai' for anything that serves the
+     * OpenAI /v1 surface — LM Studio, llama.cpp's server, vLLM, LocalAI, and
+     * Ollama itself, which answers on /v1 as well. Every existing row is
+     * 'ollama', because that is the only thing this ever spoke.
+     */
+    #[ORM\Column(name: 'ai_backend', length: 16, options: ['default' => self::BACKEND_OLLAMA])]
+    public string $backend = self::BACKEND_OLLAMA;
+
     /** e.g. `http://10.0.0.5:11434`. A box on the operator's own network. */
     #[ORM\Column(name: 'base_url', length: 255, nullable: true)]
     public ?string $baseUrl = null;

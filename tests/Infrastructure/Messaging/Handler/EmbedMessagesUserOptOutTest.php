@@ -21,6 +21,7 @@ use App\Service\Ai\AiPermissions;
 use App\Service\Ai\EmbeddingStore;
 use App\Service\Ai\MessageEmbedder;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiCompatibleClient;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -153,6 +154,7 @@ final class EmbedMessagesUserOptOutTest extends KernelTestCase
             new OllamaClient($http, new NullLogger()),
             new AiCallRecorder($this->createStub(Connection::class), new NullLogger()),
             new NullLogger(),
+            new OpenAiCompatibleClient($http, new NullLogger()),
         );
 
         $permissions = new AiPermissions($ai);

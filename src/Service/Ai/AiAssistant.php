@@ -83,11 +83,27 @@ final readonly class AiAssistant
     private const float RESIDENCY_TIMEOUT = 1.5;
 
     public function __construct(
-        private AiSettingsRepository $settings,
-        private OllamaClient         $client,
-        private AiCallRecorder       $recorder,
-        private LoggerInterface      $logger,
+        private AiSettingsRepository   $settings,
+        private OllamaClient           $ollamaClient,
+        private AiCallRecorder         $recorder,
+        private LoggerInterface        $logger,
+        private OpenAiCompatibleClient $openAiClient,
     ) {
+    }
+
+    /**
+     * The transport for the dialect the host speaks.
+     *
+     * Takes an override so the Test button can try the backend that is on
+     * screen rather than the one that was last saved — see probe().
+     */
+    private function client(AiSettings $settings, ?string $backend = null): AiClientInterface
+    {
+        if (AiSettings::BACKEND_OPENAI === ($backend ?? $settings->backend)) {
+            return $this->openAiClient->withToken($settings->apiToken);
+        }
+
+        return $this->ollamaClient;
     }
 
     public function settings(): AiSettings
@@ -153,7 +169,7 @@ final readonly class AiAssistant
 
         $model = (string) $settings->embeddingModel;
 
-        $result = $this->client->embed(
+        $result = $this->client($settings)->embed(
             (string) $settings->baseUrl,
             $model,
             $text,
@@ -219,7 +235,7 @@ final readonly class AiAssistant
 
         $model = (string) $settings->chatModel;
 
-        $result = $this->client->chat(
+        $result = $this->client($settings)->chat(
             (string) $settings->baseUrl,
             $model,
             $messages,
@@ -292,7 +308,7 @@ final readonly class AiAssistant
         return $this->recorded(
             AiCallFeature::forChat($feature),
             $model,
-            $this->client->chatStream(
+            $this->client($settings)->chatStream(
                 (string) $settings->baseUrl,
                 $model,
                 $messages,
@@ -338,7 +354,7 @@ final readonly class AiAssistant
             return false;
         }
 
-        foreach ($this->client->ps((string) $settings->baseUrl, self::RESIDENCY_TIMEOUT) as $loaded) {
+        foreach ($this->client($settings)->ps((string) $settings->baseUrl, self::RESIDENCY_TIMEOUT) as $loaded) {
             if ($wanted === self::tagged($loaded->name)) {
                 return true;
             }
@@ -443,15 +459,16 @@ final readonly class AiAssistant
      * has not turned it on yet, and a test button that says "disabled" to
      * somebody who is mid-configuration is answering a question nobody asked.
      */
-    public function probe(?string $baseUrl = null): AiProbe
+    public function probe(?string $baseUrl = null, ?string $backend = null): AiProbe
     {
-        $target = $baseUrl ?? $this->settings()->baseUrl;
+        $settings = $this->settings();
+        $target   = $baseUrl ?? $settings->baseUrl;
 
         if (null === $target || '' === trim($target)) {
             return AiProbe::unreachable('no_host');
         }
 
-        return $this->client->probe($target);
+        return $this->client($settings, $backend)->probe($target);
     }
 
     /**
@@ -499,7 +516,7 @@ final readonly class AiAssistant
             return AiWarmUp::failed('no_model');
         }
 
-        return $this->client->preload(
+        return $this->client($settings)->preload(
             (string) $settings->baseUrl,
             trim($model),
             $settings->keepAliveFor(AiFeature::WritingHelp),

@@ -10,6 +10,7 @@ use App\Entity\Ai\AiSettings;
 use App\Form\PasswordManagerIgnore;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -42,6 +43,14 @@ final class AiSettingsType extends AbstractType
                 'label'    => 'admin.ai.field.enabled',
                 'help'     => 'admin.ai.field.enabled_help',
                 'required' => false,
+            ])
+            ->add('backend', ChoiceType::class, [
+                'label'   => 'admin.ai.field.backend',
+                'help'    => 'admin.ai.field.backend_help',
+                'choices' => [
+                    'admin.ai.field.backend_ollama' => AiSettings::BACKEND_OLLAMA,
+                    'admin.ai.field.backend_openai' => AiSettings::BACKEND_OPENAI,
+                ],
             ])
             ->add('baseUrl', TextType::class, [
                 'label'       => 'admin.ai.field.base_url',

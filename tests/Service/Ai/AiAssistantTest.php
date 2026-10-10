@@ -11,6 +11,7 @@ use App\Entity\Ai\AiSettings;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Service\Ai\AiAssistant;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiCompatibleClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -249,6 +250,7 @@ final class AiAssistantTest extends KernelTestCase
             new OllamaClient($http, new NullLogger()),
             $this->recorder(),
             new NullLogger(),
+            new OpenAiCompatibleClient($http, new NullLogger()),
         );
     }
 

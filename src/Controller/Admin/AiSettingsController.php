@@ -140,7 +140,7 @@ final class AiSettingsController extends AbstractController
 
         $probe = '' === $typed
             ? AiProbe::unreachable('no_host')
-            : $this->assistant->probe($typed);
+            : $this->assistant->probe($typed, \is_string($submitted['backend'] ?? null) ? $submitted['backend'] : null);
 
         return $this->render('admin/ai/_frame.html.twig', [
             'settings' => $settings,
@@ -307,7 +307,11 @@ final class AiSettingsController extends AbstractController
             'millis'  => $result->milliseconds,
             'message' => $this->translator->trans(
                 'admin.ai.warmup.' . (string) $result->reason,
-                $result->reasonParams,
+                // Keyed bare ('status'); the translator replaces keys verbatim.
+                array_combine(
+                    array_map(static fn (string $key): string => '%' . $key . '%', array_keys($result->reasonParams)),
+                    $result->reasonParams,
+                ),
             ),
         ]);
     }

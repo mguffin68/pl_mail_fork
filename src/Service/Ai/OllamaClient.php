@@ -46,7 +46,7 @@ use Throwable;
  * use, and it never falls back to a different host. Those belong to the caller
  * and to the settings; this is a transport that speaks Ollama's dialect.
  */
-final readonly class OllamaClient
+final readonly class OllamaClient implements AiClientInterface
 {
     /**
      * The closed set of reasons a call can fail, as recorded.
